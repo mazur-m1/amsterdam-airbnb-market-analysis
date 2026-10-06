@@ -100,11 +100,6 @@ ORDER BY neighbourhood_cleansed, listings_count DESC;
 -- 3. PRICE ANALYSIS
 -- ============================================================
 
--- ============================================================
--- 3. PRICE ANALYSIS
--- ============================================================
-
-
 -- 3.1 Overall price statistics
 
 WITH prices AS (
