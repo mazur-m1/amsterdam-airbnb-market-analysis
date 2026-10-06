@@ -117,3 +117,13 @@ amsterdam-airbnb-market-analysis/
 - `01_data_quality.sql` — data validation, missing values, duplicates, ranges, and integrity checks
 - `02_market_analysis.sql` — market structure, geographic supply, pricing, availability, and review analysis
 - `03_tableau_exports.sql` — queries used to prepare datasets for Tableau visualizations
+
+## Project Workflow
+
+1. **Data collection** — downloaded publicly available Amsterdam Airbnb datasets from Inside Airbnb.
+2. **Data validation** — checked row counts, missing values, duplicates, key integrity, date ranges, and numeric fields.
+3. **Data cleaning** — cleaned price values and investigated missing and extreme values.
+4. **SQL analysis** — analyzed market structure, geographic supply, pricing, availability, and review activity.
+5. **Data preparation** — created analytical datasets for Tableau visualizations.
+6. **Dashboard development** — built an interactive Tableau dashboard summarizing the main market patterns.
+7. **Insight generation** — interpreted the results and documented the key findings.
