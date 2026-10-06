@@ -15,7 +15,7 @@ SELECT
 FROM listings;
 
 
--- Check missing values in key analytical fields
+-- Check empty values in key analytical fields
 SELECT
     SUM(CASE WHEN accommodates = '' THEN 1 ELSE 0 END) AS missing_accommodates,
     SUM(CASE WHEN bedrooms = '' THEN 1 ELSE 0 END) AS missing_bedrooms,
@@ -38,7 +38,7 @@ SELECT
 FROM listings;
 
 
--- Clean price field and validate numeric values
+-- Convert non-empty price values to numeric format
 SELECT
     id,
     price,
@@ -114,7 +114,7 @@ SELECT
 FROM reviews;
 
 
--- Check missing values in key review fields
+-- Check empty values in key analytical fields
 SELECT
     SUM(CASE WHEN listing_id = '' THEN 1 ELSE 0 END) AS missing_listing_id,
     SUM(CASE WHEN id = '' THEN 1 ELSE 0 END) AS missing_review_id,
@@ -122,3 +122,26 @@ SELECT
     SUM(CASE WHEN reviewer_id = '' THEN 1 ELSE 0 END) AS missing_reviewer_id,
     SUM(CASE WHEN reviewer_name = '' THEN 1 ELSE 0 END) AS missing_reviewer_name
 FROM reviews;
+
+-- ============================================================
+-- 4. REFERENTIAL INTEGRITY
+-- ============================================================
+
+-- Check review listing IDs without a matching listing
+
+SELECT
+    COUNT(*) AS unmatched_reviews
+FROM reviews r
+LEFT JOIN listings l
+    ON r.listing_id = l.id
+WHERE l.id IS NULL;
+
+
+-- Check calendar listing IDs without a matching listing
+
+SELECT
+    COUNT(*) AS unmatched_calendar_rows
+FROM calendar c
+LEFT JOIN listings l
+    ON c.listing_id = l.id
+WHERE l.id IS NULL;
