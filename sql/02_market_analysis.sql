@@ -100,45 +100,165 @@ ORDER BY neighbourhood_cleansed, listings_count DESC;
 -- 3. PRICE ANALYSIS
 -- ============================================================
 
--- 3.1 Average price by neighbourhood
+-- ============================================================
+-- 3. PRICE ANALYSIS
+-- ============================================================
+
+
+-- 3.1 Overall price statistics
+
+WITH prices AS (
+    SELECT
+        CAST(REPLACE(REPLACE(price, '$', ''), ',', '') AS REAL) AS price_numeric
+    FROM listings
+    WHERE price <> ''
+),
+ranked_prices AS (
+    SELECT
+        price_numeric,
+        ROW_NUMBER() OVER (
+            ORDER BY price_numeric
+        ) AS row_num,
+        COUNT(*) OVER () AS total_count
+    FROM prices
+)
 SELECT
-    neighbourhood_cleansed,
     COUNT(*) AS listings_with_price,
+    ROUND(AVG(price_numeric), 2) AS avg_price,
     ROUND(
-        AVG(CAST(REPLACE(REPLACE(price, '$', ''), ',', '') AS REAL)),
+        AVG(
+            CASE
+                WHEN row_num IN (
+                    (total_count + 1) / 2,
+                    (total_count + 2) / 2
+                )
+                THEN price_numeric
+            END
+        ),
         2
-    ) AS avg_price
-FROM listings
-WHERE price <> ''
-GROUP BY neighbourhood_cleansed
-ORDER BY avg_price DESC;
+    ) AS median_price
+FROM ranked_prices;
 
 
--- 3.2 Average price by room type
+-- 3.2 Price by neighbourhood
+
+WITH prices AS (
+    SELECT
+        neighbourhood_cleansed,
+        CAST(REPLACE(REPLACE(price, '$', ''), ',', '') AS REAL) AS price_numeric
+    FROM listings
+    WHERE price <> ''
+),
+ranked_prices AS (
+    SELECT
+        neighbourhood_cleansed,
+        price_numeric,
+        ROW_NUMBER() OVER (
+            PARTITION BY neighbourhood_cleansed
+            ORDER BY price_numeric
+        ) AS row_num,
+        COUNT(*) OVER (
+            PARTITION BY neighbourhood_cleansed
+        ) AS neighbourhood_count
+    FROM prices
+),
+neighbourhood_stats AS (
+    SELECT
+        neighbourhood_cleansed,
+        COUNT(*) AS listings_count,
+        ROUND(AVG(price_numeric), 2) AS avg_price
+    FROM prices
+    GROUP BY neighbourhood_cleansed
+),
+median_prices AS (
+    SELECT
+        neighbourhood_cleansed,
+        ROUND(AVG(price_numeric), 2) AS median_price
+    FROM ranked_prices
+    WHERE row_num IN (
+        (neighbourhood_count + 1) / 2,
+        (neighbourhood_count + 2) / 2
+    )
+    GROUP BY neighbourhood_cleansed
+)
 SELECT
-    room_type,
-    COUNT(*) AS listings_with_price,
-    ROUND(
-        AVG(CAST(REPLACE(REPLACE(price, '$', ''), ',', '') AS REAL)),
-        2
-    ) AS avg_price
-FROM listings
-WHERE price <> ''
-GROUP BY room_type
-ORDER BY avg_price DESC;
+    neighbourhood_stats.neighbourhood_cleansed,
+    listings_count,
+    avg_price,
+    median_price
+FROM neighbourhood_stats
+JOIN median_prices
+    ON neighbourhood_stats.neighbourhood_cleansed =
+       median_prices.neighbourhood_cleansed
+ORDER BY median_price DESC;
 
 
--- 3.3 Average price by guest capacity
+-- 3.3 Price by room type
+
+WITH prices AS (
+    SELECT
+        room_type,
+        CAST(REPLACE(REPLACE(price, '$', ''), ',', '') AS REAL) AS price_numeric
+    FROM listings
+    WHERE price <> ''
+),
+ranked_prices AS (
+    SELECT
+        room_type,
+        price_numeric,
+        ROW_NUMBER() OVER (
+            PARTITION BY room_type
+            ORDER BY price_numeric
+        ) AS row_num,
+        COUNT(*) OVER (
+            PARTITION BY room_type
+        ) AS room_count
+    FROM prices
+),
+room_type_stats AS (
+    SELECT
+        room_type,
+        COUNT(*) AS listings_count,
+        ROUND(AVG(price_numeric), 2) AS avg_price
+    FROM prices
+    GROUP BY room_type
+),
+median_prices AS (
+    SELECT
+        room_type,
+        ROUND(AVG(price_numeric), 2) AS median_price
+    FROM ranked_prices
+    WHERE row_num IN (
+        (room_count + 1) / 2,
+        (room_count + 2) / 2
+    )
+    GROUP BY room_type
+)
+SELECT
+    room_type_stats.room_type,
+    listings_count,
+    avg_price,
+    median_price
+FROM room_type_stats
+JOIN median_prices
+    ON room_type_stats.room_type = median_prices.room_type
+ORDER BY median_price DESC;
+
+
+-- 3.4 Price by guest capacity
+
 SELECT
     CAST(accommodates AS INTEGER) AS accommodates,
     COUNT(*) AS listings_with_price,
     ROUND(
-        AVG(CAST(REPLACE(REPLACE(price, '$', ''), ',', '') AS REAL)),
+        AVG(
+            CAST(REPLACE(REPLACE(price, '$', ''), ',', '') AS REAL)
+        ),
         2
     ) AS avg_price
 FROM listings
 WHERE price <> ''
-GROUP BY accommodates
+GROUP BY CAST(accommodates AS INTEGER)
 ORDER BY CAST(accommodates AS INTEGER);
 
 
